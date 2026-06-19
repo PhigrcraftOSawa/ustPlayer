@@ -15,14 +15,14 @@
 
 </div>
 
-## 下载说明
+## 📄下载说明
 请前往 Release 页面下载最新的.exe版本。
 
 > [!WARNING]
 > 
 > 我们将不再提供 .msi 安装包，也不再打算提供 .app 格式程序。
 
-## 更新内容（较于比上一版本）
+## 🔃更新内容（较于比上一版本）
 
 一个小更新或修复啦！
 - 修复了由重定向导致的拖拽式启动导致的协议、错误码字典无法打开的问题。
@@ -31,7 +31,21 @@
 - 微微改动了GUI以优化使用体验。
 记得更新嘎！
 
-## 补充说明
+## 🥰致谢
+### 资源
+[PySide6](https://www.qt.io/)
+
+[PySide6-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets/tree/PySide6)
+
+[loguru](https://github.com/delgan/loguru)
+
+同时也感谢所有参与本项目的贡献者！
+
+<a href="https://github.com/SYEternalR/ustPlayer/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=SYEternalR/ustPlayer" />
+</a>
+
+## ⚠️补充说明
 **使用前请务必阅读并同意相关使用协议。**
 
 本工具在开发过程中使用了 AI 工具进行辅助开发。
