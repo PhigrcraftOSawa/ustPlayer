@@ -16,7 +16,9 @@
 </div>
 
 ## 📄下载说明
-请前往 Release 页面下载最新的.exe版本。
+请前往 Release 页面下载最新的压缩包/安装包文件(压缩包通常是'ustPlayer-版本号-Windows-x64-Portable.zip'，安装包通常是'ustPlayer-版本号-Windows-x64-Setup.exe')。
+
+软件仅支持Windows10 64位及以上版本，请确保您的系统符合要求。
 
 > [!WARNING]
 > 
