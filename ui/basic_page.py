@@ -15,7 +15,7 @@ from qfluentwidgets import (
     InfoBar, InfoBarPosition,
 )
 
-from ustPlayer.core.settings_manager import SettingsManager
+from core.settings_manager import SettingsManager
 
 
 class BasicPage(QWidget):

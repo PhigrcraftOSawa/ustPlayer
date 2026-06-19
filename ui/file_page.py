@@ -14,7 +14,7 @@ from qfluentwidgets import (
     BodyLabel, HorizontalSeparator, InfoBar, InfoBarPosition,
 )
 
-from ustPlayer.core.settings_manager import SettingsManager
+from core.settings_manager import SettingsManager
 
 
 class FilePage(QWidget):

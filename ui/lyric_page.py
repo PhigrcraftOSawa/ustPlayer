@@ -11,7 +11,7 @@ from qfluentwidgets import (
     BodyLabel, StrongBodyLabel, HorizontalSeparator,
 )
 
-from ustPlayer.core.settings_manager import SettingsManager
+from core.settings_manager import SettingsManager
 
 
 class LyricPage(QWidget):

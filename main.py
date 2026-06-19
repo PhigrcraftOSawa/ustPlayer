@@ -3,7 +3,6 @@
 
 import os
 import sys
-import traceback
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QTimer
@@ -14,16 +13,16 @@ from qfluentwidgets import (
     InfoBar, InfoBarPosition, MessageBox,
 )
 
-from ustPlayer.core.log import get_logger, log_startup
-from ustPlayer.core.settings_manager import SettingsManager
-from ustPlayer.core.ustplayer import display
-import ustPlayer.core.ustreader as ur
+from core.log import get_logger, log_startup
+from core.settings_manager import SettingsManager
+from core.ustplayer import display
+import core.ustreader as ur
 
-from ustPlayer.ui.basic_page import BasicPage
-from ustPlayer.ui.file_page import FilePage
-from ustPlayer.ui.player_style_page import PlayerStylePage
-from ustPlayer.ui.lyric_page import LyricPage
-from ustPlayer.ui.other_page import OtherPage
+from ui.basic_page import BasicPage
+from ui.file_page import FilePage
+from ui.player_style_page import PlayerStylePage
+from ui.lyric_page import LyricPage
+from ui.other_page import OtherPage
 
 
 class MainWindow(MSFluentWindow):

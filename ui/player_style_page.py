@@ -3,25 +3,15 @@
 
 from typing import Optional
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QColorDialog,
-)
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtGui import QColor
 
 from qfluentwidgets import (
-    LineEdit, PushButton, ComboBox,
+    LineEdit, ComboBox, ColorPickerButton,
     BodyLabel, StrongBodyLabel, HorizontalSeparator,
 )
 
-from ustPlayer.core.settings_manager import SettingsManager
-
-
-def _hex_to_qss(hex_color: str) -> str:
-    """确保颜色以 # 开头。"""
-    hex_color = hex_color.strip()
-    if not hex_color.startswith("#"):
-        hex_color = "#" + hex_color
-    return hex_color
+from core.settings_manager import SettingsManager
 
 
 class PlayerStylePage(QWidget):
@@ -42,7 +32,7 @@ class PlayerStylePage(QWidget):
 
         layout.addWidget(StrongBodyLabel("/ 播放器样式"))
 
-        # ---- 颜色选择行 ----
+        # ---- 颜色选择行（ColorPickerButton + LineEdit） ----
         self._add_color_row(layout, "背景色:", "bg_color", self._s.bg_color)
         self._add_color_row(layout, "音名色:", "note_color", self._s.note_color)
         self._add_color_row(layout, "歌字色:", "lyric_color", self._s.lyric_color)
@@ -64,21 +54,16 @@ class PlayerStylePage(QWidget):
         # ---- 其他显示设置 ----
         layout.addWidget(StrongBodyLabel("/ 其他显示设置"))
 
-        # 音高占位符
         self._add_combo_with_custom(
             layout, "音高间占位符:", "pitch_placeholder",
             ["无", "-", "自定义文字"],
             self._s.pitch_placeholder, "pitch_custom",
         )
-
-        # 静默时显示
         self._add_combo_with_custom(
             layout, "静默时显示:", "silent_display",
             ["R", "-", "自定义文字", "什么都不显示"],
             self._s.silent_display, "silent_custom",
         )
-
-        # 结束时显示
         self._add_combo_with_custom(
             layout, "结束时显示:", "end_display",
             ["END", "-", "自定义文字", "什么都不显示"],
@@ -88,23 +73,29 @@ class PlayerStylePage(QWidget):
         layout.addStretch()
 
     def _add_color_row(self, parent: QVBoxLayout, label: str, attr: str, init_color: str):
-        """颜色选择行：标签 + 输入框 + 更改按钮。"""
+        """颜色选择行：标签 + LineEdit + ColorPickerButton。
+
+        LineEdit 可手动输入 hex 值，ColorPickerButton 可可视化选色，
+        两者双向同步。
+        """
         row = QHBoxLayout()
         row.setSpacing(8)
 
         row.addWidget(BodyLabel(label))
 
+        # hex 输入框
         edit = LineEdit()
         edit.setText(init_color)
         edit.setMaximumWidth(100)
         setattr(self, f"edit_{attr}", edit)
         row.addWidget(edit)
 
-        btn = PushButton("更改")
-        btn.clicked.connect(lambda: self._pick_color(attr))
-        row.addWidget(btn)
-        row.addStretch()
+        # Fluent 内置颜色选择按钮
+        picker = ColorPickerButton(QColor(init_color), f"选择{label}", self)
+        setattr(self, f"picker_{attr}", picker)
+        row.addWidget(picker)
 
+        row.addStretch()
         parent.addLayout(row)
 
     def _add_combo_with_custom(
@@ -123,13 +114,11 @@ class PlayerStylePage(QWidget):
         setattr(self, f"combo_{attr}", combo)
         row.addWidget(combo)
 
-        # 自定义文字输入框（默认隐藏）
         custom_edit = LineEdit()
         custom_edit.setPlaceholderText("自定义文字...")
         custom_edit.setMaximumWidth(150)
         custom_edit.setVisible(init_value == "自定义文字")
         setattr(self, f"edit_{custom_attr}", custom_edit)
-        setattr(self, f"_custom_attr_{attr}", custom_attr)
         row.addWidget(custom_edit)
 
         row.addStretch()
@@ -140,12 +129,31 @@ class PlayerStylePage(QWidget):
     def _connect_signals(self):
         s = self._s
 
-        # 颜色输入框
-        self.edit_bg_color.textChanged.connect(lambda v: setattr(s, "bg_color", v))
-        self.edit_note_color.textChanged.connect(lambda v: setattr(s, "note_color", v))
-        self.edit_lyric_color.textChanged.connect(lambda v: setattr(s, "lyric_color", v))
-        self.edit_lyric_text_color.textChanged.connect(lambda v: setattr(s, "lyric_text_color", v))
-        self.edit_other_text_color.textChanged.connect(lambda v: setattr(s, "other_text_color", v))
+        # 颜色：LineEdit ↔ ColorPickerButton ↔ Settings 三向同步
+        for attr in ["bg_color", "note_color", "lyric_color", "lyric_text_color", "other_text_color"]:
+            _edit: LineEdit = getattr(self, f"edit_{attr}")
+            _picker: ColorPickerButton = getattr(self, f"picker_{attr}")
+
+            # 用默认参数捕获当前循环值，避免闭包延迟绑定
+            def bind_edit(a=attr, p=_picker):
+                def on_text(v: str):
+                    setattr(self._s, a, v)
+                    p.blockSignals(True)
+                    p.setColor(QColor(v) if v else QColor("#FFFFFF"))
+                    p.blockSignals(False)
+                return on_text
+
+            def bind_picker(a=attr, ed=_edit):
+                def on_color(c: QColor):
+                    h = c.name()
+                    setattr(self._s, a, h)
+                    ed.blockSignals(True)
+                    ed.setText(h)
+                    ed.blockSignals(False)
+                return on_color
+
+            _edit.textChanged.connect(bind_edit())
+            _picker.colorChanged.connect(bind_picker())
 
         # 歌词位置
         self.lyric_pos_combo.currentTextChanged.connect(lambda v: setattr(s, "lyric_pos", v))
@@ -179,29 +187,24 @@ class PlayerStylePage(QWidget):
             custom_edit.setVisible(value == "自定义文字")
 
         combo.currentTextChanged.connect(on_change)
-        # 初始化 visibility
         custom_edit.setVisible(combo.currentText() == "自定义文字")
-
-    # ===================== 颜色选择器 =====================
-
-    def _pick_color(self, attr: str):
-        edit: LineEdit = getattr(self, f"edit_{attr}")
-        current = edit.text().strip() or "#FFFFFF"
-        color = QColorDialog.getColor(Qt.GlobalColor.white if not current.startswith("#") else current, self)
-        if color.isValid():
-            edit.setText(color.name())
-            setattr(self._s, attr, color.name())
 
     # ===================== 同步 =====================
 
     def sync_all_from_settings(self):
         """导入 uplr 后同步 UI。"""
         s = self._s
-        self.edit_bg_color.setText(s.bg_color)
-        self.edit_note_color.setText(s.note_color)
-        self.edit_lyric_color.setText(s.lyric_color)
-        self.edit_lyric_text_color.setText(s.lyric_text_color)
-        self.edit_other_text_color.setText(s.other_text_color)
+        for attr in ["bg_color", "note_color", "lyric_color", "lyric_text_color", "other_text_color"]:
+            color = getattr(s, attr)
+            edit: LineEdit = getattr(self, f"edit_{attr}")
+            picker: ColorPickerButton = getattr(self, f"picker_{attr}")
+            edit.blockSignals(True)
+            edit.setText(color)
+            edit.blockSignals(False)
+            picker.blockSignals(True)
+            picker.setColor(QColor(color))
+            picker.blockSignals(False)
+
         self.lyric_pos_combo.setCurrentText(s.lyric_pos)
         getattr(self, "combo_pitch_placeholder").setCurrentText(s.pitch_placeholder)
         getattr(self, "edit_pitch_custom").setText(s.pitch_custom_text)

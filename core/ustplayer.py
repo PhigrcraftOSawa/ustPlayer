@@ -15,7 +15,7 @@ from PySide6.QtGui import (
     QPainter, QColor, QFont, QFontMetrics, QPen, QPolygonF,
 )
 
-from ustPlayer.core.log import get_logger
+from core.log import get_logger
 
 
 # ===================== 工具函数 =====================

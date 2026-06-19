@@ -64,8 +64,17 @@ ustPlayer/
 | `scrolledtext.ScrolledText` | `TextEdit` (只读) |
 | `messagebox` | `InfoBar` / `MessageBox` |
 | `filedialog` | `QFileDialog` |
-| `colorchooser` | `QColorDialog` |
+| `colorchooser` | `ColorPickerButton`（Fluent 内置取色器）|
 | `tk.Canvas` | `QPainter` (paintEvent) |
+
+### 后续修复 (v26f19)
+
+- **颜色选择器升级**：`QColorDialog` → `ColorPickerButton`（qfluentwidgets 内置 Fluent 风格取色器）
+  - 点击即弹出 Fluent Design 取色面板，无需调用系统对话框
+  - LineEdit ↔ ColorPickerButton ↔ Settings 三向同步，双向更新互不干扰（`blockSignals` 防循环）
+- **文本裁切修复**：`boundingRect()` → `horizontalAdvance() + height()` + 20% padding，解决 CJK 字形被截问题
+- **全屏边角修复**：窗口标志在 `show()` 前统一设置 `FramelessWindowHint | WindowStaysOnTopHint`，消除边角漏出
+- **音高线诊断**：播放器启动日志报告 `含PitchBend的音符=N`，音符切换时记录绘制决策
 
 ### 依赖
 
