@@ -6,9 +6,9 @@
 
 中文的、面向多样音声合成编辑器工程文件的可视化工具。
 
-![GitHub Release](https://img.shields.io/github/v/release/SYEternalR/ustPlayer?style=flat-square&large=true)
-![GitHub All Releases](https://img.shields.io/github/downloads/SYEternalR/ustPlayer/total?style=flat-square&large=true)
-![Star](https://img.shields.io/github/stars/SYEternalR/ustPlayer?style=flat-square&large=true)
+![GitHub Release](https://img.shields.io/github/v/release/SYEternalR/ustPlayer?style=for-the-badge)
+![GitHub All Releases](https://img.shields.io/github/downloads/SYEternalR/ustPlayer/total?style=for-the-badge)
+![Star](https://img.shields.io/github/stars/SYEternalR/ustPlayer?style=for-the-badge)
 
 
 [发布视频ヾ(≧▽≦*)o](https://www.bilibili.com/video/BV1YjcwzVEcX) | <a href="UPDATELOG.md">更新日志</a>
@@ -30,7 +30,7 @@
 
 [loguru](https://github.com/delgan/loguru)
 
-同时也感谢所有参与本项目的贡献者！
+### 贡献者
 
 <a href="https://github.com/SYEternalR/ustPlayer/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=SYEternalR/ustPlayer" />
