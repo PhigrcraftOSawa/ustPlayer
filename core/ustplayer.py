@@ -15,7 +15,7 @@ from PySide6.QtGui import (
     QPainter, QColor, QFont, QFontMetrics, QPen, QPolygonF,
 )
 
-from core.log import get_logger
+from core.log import logger
 
 
 # ===================== 工具函数 =====================
@@ -55,7 +55,6 @@ class NoteLyricDisplay(QWidget):
 
     def __init__(self, ust_info: dict):
         super().__init__()
-        self._log = get_logger()
         self._info = ust_info
 
         # ---- 窗口配置 ----
@@ -74,7 +73,7 @@ class NoteLyricDisplay(QWidget):
         self.tempo = ust_info.get("tempo", 120)
         self.last_valid_lyric = ""
         pb_notes = sum(1 for n in self.notes if len(n.get("pitch_bend", [])) >= 2)
-        self._log.info(
+        logger.info(
             f"播放器初始化 — 音符数={len(self.notes)}, BPM={self.tempo}, "
             f"含PitchBend的音符={pb_notes}"
         )
@@ -84,7 +83,7 @@ class NoteLyricDisplay(QWidget):
         self.tick_per_second = (self.tempo * 480) / 60
         self.total_tick = sum(max(n.get("length", 480), 1) for n in self.notes)
         self.note_tick_ranges = self._calc_note_tick_ranges()
-        self._log.debug(
+        logger.debug(
             f"时间轴 — tick_per_second={self.tick_per_second:.1f}, "
             f"total_tick={self.total_tick}"
         )
@@ -142,7 +141,7 @@ class NoteLyricDisplay(QWidget):
             self.w, self.h = geo.width(), geo.height()
         else:
             self.w, self.h = 1920, 1080
-        self._log.debug(f"屏幕尺寸: {self.w}x{self.h}")
+        logger.debug(f"屏幕尺寸: {self.w}x{self.h}")
 
         self._init_fonts()
 
@@ -158,7 +157,7 @@ class NoteLyricDisplay(QWidget):
         # ---- 定时器（5ms 刷新） — 延迟到 showEvent 启动 ----
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
-        self._log.debug("播放器 __init__ 完成")
+        logger.debug("播放器 __init__ 完成")
 
     def _init_fonts(self):
         """初始化字体（屏幕尺寸变化后可重新调用）。"""
@@ -176,10 +175,10 @@ class NoteLyricDisplay(QWidget):
         """窗口显示后启动定时器。"""
         super().showEvent(event)
         self._update_screen_size()
-        self._log.info(f"播放器窗口已显示 — 实际尺寸: {self.w}x{self.h}")
+        logger.info(f"播放器窗口已显示 — 实际尺寸: {self.w}x{self.h}")
         if not self._timer.isActive():
             self._timer.start(5)
-            self._log.debug("定时器已启动 (5ms)")
+            logger.debug("定时器已启动 (5ms)")
 
     def resizeEvent(self, event):
         """窗口大小变化时更新尺寸和字体。"""
@@ -249,7 +248,7 @@ class NoteLyricDisplay(QWidget):
                 self._current_note = None
                 self.update()
                 self._timer.stop()
-                self._log.info("播放完成，1秒后关闭窗口")
+                logger.info("播放完成，1秒后关闭窗口")
                 QTimer.singleShot(1000, self.close)
                 return
 
@@ -272,7 +271,7 @@ class NoteLyricDisplay(QWidget):
             self.update()  # 触发 paintEvent
 
         except Exception:
-            self._log.exception("_tick 异常")
+            logger.exception("_tick 异常")
 
     def _process_note(self, note: dict):
         """根据音符数据更新当前显示的歌字和音名。"""
@@ -342,7 +341,7 @@ class NoteLyricDisplay(QWidget):
             note_length = note.get("length", 0)
             note_idx = note.get("index", -1)
             if note_idx != self._last_pb_log_note_idx:
-                self._log.debug(
+                logger.debug(
                     f"音高线: note_idx={note_idx}, pb_len={len(pb_data)}, "
                     f"note_len={note_length}, "
                     f"{'将绘制' if (pb_data and len(pb_data) >= 2 and note_length > 0) else '数据不足，跳过'}"
@@ -515,7 +514,6 @@ def display(ust_info: dict) -> NoteLyricDisplay:
     关键：窗口标志必须在 show/showFullScreen 之前统一设置，
     否则全屏标志和置顶标志互相冲突导致边角漏出。
     """
-    logger = get_logger()
     logger.info("创建播放器窗口...")
     window = NoteLyricDisplay(ust_info)
 
