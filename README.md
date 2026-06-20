@@ -20,7 +20,9 @@
 
 v26b10及以前的版本通常是只有压缩包的，命名规则为`ustPlayer-版本号.zip`
 
-v26f19的压缩包通常是`ustPlayer-版本号-Windows-x64-Portable.zip`，安装包通常是`ustPlayer-版本号-Windows-x64-Setup.exe`。
+v26f19的压缩包通常是`ustPlayer-版本号-Windows-x64-Portable.zip`
+
+安装包通常是`ustPlayer-版本号-Windows-x64-Setup.exe`。
 
 软件仅支持Windows10 64位及以上版本，请确保您的系统符合要求。
 
