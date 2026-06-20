@@ -5,7 +5,7 @@
 #define MyAppVersion "v26f19"
 #define MyAppPublisher "SYEternal_R"
 #define MyAppURL "https://space.bilibili.com/661930756"
-#define MyAppExeName "main.exe"
+#define MyAppExeName "ustPlayer.exe"
 #define MyAppAssocName MyAppName + "文件"
 #define MyAppAssocExt ".uplr"
 #define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
@@ -37,8 +37,8 @@ LicenseFile=D:\code\ustPlayer\Terms.txt
 ; 取消注释以下行以在非管理员安装模式下运行 (仅为当前用户安装)。
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Users\Administrator\Desktop
-OutputBaseFilename=ustPlayer
+OutputDir=C:\Users\HiRenG\Desktop
+OutputBaseFilename=ustPlayer-v26f19-Windows-x64-Setup
 SetupIconFile=D:\code\ustPlayer\icon-128.ico
 SolidCompression=yes
 WizardStyle=modern
@@ -52,7 +52,7 @@ Name: "english"; MessagesFile: "compiler:Languages\English.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\Administrator\Desktop\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\HiRenG\Desktop\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\code\ustPlayer-output\main.dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; 注意：不要在任何共享系统文件上使用 "Flags: ignoreversion" 
 
