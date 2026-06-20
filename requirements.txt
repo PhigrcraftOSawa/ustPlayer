@@ -12,7 +12,7 @@ PySide6>=6.5.0
 #   PrimaryPushButton, PushButton, ColorPickerButton     (按钮 + 取色器)
 #   BodyLabel, StrongBodyLabel, HorizontalSeparator      (标签 + 分隔线)
 #   InfoBar, InfoBarPosition, MessageBox                 (通知 + 对话框)
-PySide6-Fluent-Widgets[full]>=1.5.0
+PySide6-Fluent-Widgets[full]>=1.11.2
 
 # 日志库 — 彩色控制台 + 文件轮转
 #   logger.info / logger.debug / logger.exception

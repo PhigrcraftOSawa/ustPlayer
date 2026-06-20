@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon
 
 from qfluentwidgets import (
-    MSFluentWindow, NavigationItemPosition, FluentIcon,
+    FluentWindow, NavigationItemPosition, FluentIcon,
     InfoBar, InfoBarPosition, MessageBox,
 )
 
@@ -25,7 +25,7 @@ from ui.lyric_page import LyricPage
 from ui.other_page import OtherPage
 
 
-class MainWindow(MSFluentWindow):
+class MainWindow(FluentWindow):
     """主窗口 — 侧边导航 + 堆叠页面。"""
 
     def __init__(self):
@@ -175,7 +175,7 @@ class MainWindow(MSFluentWindow):
     # ===================== 导航切换时同步页面 =====================
 
     def switchTo(self, interface):
-        """覆写父类方法，切换导航时触发页面同步。"""
+        """覆写父类方法，切换后同步页面数据。"""
         super().switchTo(interface)
         if hasattr(interface, "sync_all_from_settings"):
             interface.sync_all_from_settings()

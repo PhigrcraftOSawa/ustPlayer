@@ -53,7 +53,6 @@ class SettingsManager(QObject):
     fullscreen_changed = Signal(bool)
     show_lyric_changed = Signal(bool)
     curve_show_changed = Signal(bool)
-
     def __init__(self, parent: Optional[QObject] = None):
         super().__init__(parent)
 
@@ -505,6 +504,8 @@ class SettingsManager(QObject):
             f.write(f"curve_show={1 if self.curve_show else 0}\n")
             f.write(f"pitch_placeholder={self.pitch_placeholder}\n")
             f.write(f"pitch_custom_text={self.pitch_custom_text}\n")
+            f.write(f"")
+
 
     def import_uplr(self, input_file: str):
         """从 .uplr 工程文件导入全部配置。"""

@@ -12,7 +12,7 @@ from typing import List, Tuple, Optional
 from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import Qt, QTimer, QRectF, QPointF
 from PySide6.QtGui import (
-    QPainter, QColor, QFont, QFontMetrics, QPen, QPolygonF,
+    QPainter, QColor, QFont, QFontMetrics, QPen, QPolygonF, QImage,
 )
 
 from core.log import logger
@@ -79,7 +79,7 @@ class NoteLyricDisplay(QWidget):
         )
 
         # ---- 时间轴 ----
-        self.start_real_time = time.time()
+        self.start_real_time = 0.0  # 在 showEvent 中与音乐同步设置
         self.tick_per_second = (self.tempo * 480) / 60
         self.total_tick = sum(max(n.get("length", 480), 1) for n in self.notes)
         self.note_tick_ranges = self._calc_note_tick_ranges()
@@ -114,7 +114,6 @@ class NoteLyricDisplay(QWidget):
         self.end_custom_text = ps.get("end_custom_text", "")
         self.pitch_placeholder = ps.get("pitch_placeholder", "无")
         self.pitch_custom_text = ps.get("pitch_custom_text", "")
-
         # ---- 颜色 ----
         self.ust_lyric_color = hex_to_rgb(
             validate_hex_color(ps.get("lyric_color", "#FFFFFF"))
@@ -152,15 +151,16 @@ class NoteLyricDisplay(QWidget):
         self._current_note_name = ""
         self._current_note: Optional[dict] = None
         self._play_elapsed = 0.0
-        self._last_pb_log_note_idx = -1  # 避免重复日志
+        self._last_pb_log_note_idx = -1
+        self._note_idx_hint = 0  # 加速音符查找
 
-        # ---- 定时器（5ms 刷新） — 延迟到 showEvent 启动 ----
+        # ---- 定时器（16ms ≈ 60fps，画面流畅 + 低 CPU） ----
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
         logger.debug("播放器 __init__ 完成")
 
     def _init_fonts(self):
-        """初始化字体（屏幕尺寸变化后可重新调用）。"""
+        """初始化字体和度量缓存（屏幕尺寸变化后可重新调用）。"""
         note_fs = max(int(self.h * 2 / 3 * 0.4), 50)
         lyric_fs = max(int(self.h * 0.03), 10)
         ust_lyric_fs = max(int(self.h * 2 / 3 * 0.2), 80)
@@ -171,14 +171,21 @@ class NoteLyricDisplay(QWidget):
         self.small_font = QFont("等线", 14)
         self.copyright_font = QFont("等线", 12)
 
+        # 缓存 QFontMetrics，避免每帧重复创建
+        self._fm_note = QFontMetrics(self.note_font)
+        self._fm_lyric = QFontMetrics(self.lyric_font)
+        self._fm_ust_lyric = QFontMetrics(self.ust_lyric_font)
+        self._fm_small = QFontMetrics(self.small_font)
+        self._fm_copyright = QFontMetrics(self.copyright_font)
+
     def showEvent(self, event):
         """窗口显示后启动定时器。"""
         super().showEvent(event)
         self._update_screen_size()
         logger.info(f"播放器窗口已显示 — 实际尺寸: {self.w}x{self.h}")
-        if not self._timer.isActive():
-            self._timer.start(5)
-            logger.debug("定时器已启动 (5ms)")
+        self.start_real_time = time.time()
+        self._timer.start(16)
+        logger.debug("定时器已启动 (16ms)")
 
     def resizeEvent(self, event):
         """窗口大小变化时更新尺寸和字体。"""
@@ -236,7 +243,7 @@ class NoteLyricDisplay(QWidget):
     # ===================== 主循环 =====================
 
     def _tick(self):
-        """5ms 定时器回调：计算当前位置 → 更新绘制状态。"""
+        """定时器回调：计算当前位置 → 更新绘制状态。"""
         try:
             self._play_elapsed = time.time() - self.start_real_time
             current_tick = self._play_elapsed * self.tick_per_second
@@ -252,12 +259,29 @@ class NoteLyricDisplay(QWidget):
                 QTimer.singleShot(1000, self.close)
                 return
 
-            # 匹配当前音符
+            # 匹配当前音符（从上次位置开始查，加速扫描）
             current_note = None
-            for tick_start, tick_end, note in self.note_tick_ranges:
-                if tick_start <= current_tick < tick_end:
-                    current_note = note
-                    break
+            hint = self._note_idx_hint
+            ranges = self.note_tick_ranges
+            n = len(ranges)
+
+            # 从 hint 向前查找
+            if hint < n and ranges[hint][0] <= current_tick < ranges[hint][1]:
+                current_note = ranges[hint][2]
+            else:
+                # 从 hint 向后扫描
+                for i in range(hint, n):
+                    if ranges[i][0] <= current_tick < ranges[i][1]:
+                        current_note = ranges[i][2]
+                        self._note_idx_hint = i
+                        break
+                # 没找到则从 0 开始重新扫（处理循环或跳转）
+                if current_note is None:
+                    for i in range(0, hint):
+                        if ranges[i][0] <= current_tick < ranges[i][1]:
+                            current_note = ranges[i][2]
+                            self._note_idx_hint = i
+                            break
 
             if current_note:
                 self._process_note(current_note)
@@ -308,13 +332,8 @@ class NoteLyricDisplay(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-
-        # 背景 — 用 widget 实际大小铺满，不留边角
-        r = self.rect()
-        painter.fillRect(r, self._bg_color)
-
-        # 用实时 widget 尺寸计算中心点（w/h 在 resizeEvent 中保持更新）
         ww, wh = self.width(), self.height()
+        painter.fillRect(0, 0, ww, wh, self._bg_color)
         cx, cy = ww // 2, wh // 2
 
         # ---- 音名 ----
@@ -323,11 +342,10 @@ class NoteLyricDisplay(QWidget):
             note_c.setAlpha(self.note_alpha)
             painter.setPen(note_c)
             painter.setFont(self.note_font)
-
-            fm = QFontMetrics(self.note_font)
+            fm = self._fm_note
             tw = fm.horizontalAdvance(self._current_note_name)
             th = fm.height()
-            pad = th * 0.2  # 20% 余量，防止 CJK 字形被裁切
+            pad = th * 0.2
             painter.drawText(
                 QRectF(cx - tw / 2 - pad, cy - th / 2 - pad,
                        tw + pad * 2, th + pad * 2),
@@ -348,17 +366,15 @@ class NoteLyricDisplay(QWidget):
                 )
                 self._last_pb_log_note_idx = note_idx
             if pb_data and len(pb_data) >= 2 and note_length > 0:
-                curve_width = note_length  # length_to_pixel = 1
+                curve_width = note_length
                 start_x = cx - curve_width // 2
                 base_y = cy
                 pb_count = len(pb_data)
-
                 points = []
                 for i in range(pb_count):
                     x = start_x + (i / (pb_count - 1)) * curve_width
-                    y_offset = (pb_data[i] / 100) * (self.h * 0.09)
+                    y_offset = (pb_data[i] / 100) * (wh * 0.09)
                     y = base_y - y_offset
-
                     safe_top, safe_bottom = 100, wh - 100
                     if y < safe_top:
                         exceed = safe_top - y
@@ -370,7 +386,6 @@ class NoteLyricDisplay(QWidget):
                         y = safe_bottom + (exceed * scale)
                     y = max(50, min(y, wh - 50))
                     points.append(QPointF(x, y))
-
                 if len(points) >= 2:
                     pen = QPen(QColor(self.small_font_color_hex))
                     pen.setWidth(self.note_line_width)
@@ -382,10 +397,9 @@ class NoteLyricDisplay(QWidget):
             lyric_c = QColor(*self.ust_lyric_color)
             painter.setPen(lyric_c)
             painter.setFont(self.ust_lyric_font)
-            fm = QFontMetrics(self.ust_lyric_font)
-            tw = fm.horizontalAdvance(self._current_lyric)
-            th = fm.height()
-            pad = th * 0.2  # 20% 余量
+            tw = self._fm_ust_lyric.horizontalAdvance(self._current_lyric)
+            th = self._fm_ust_lyric.height()
+            pad = th * 0.2
             painter.drawText(
                 QRectF(cx - tw / 2 - pad, cy - th / 2 - pad,
                        tw + pad * 2, th + pad * 2),
@@ -395,7 +409,6 @@ class NoteLyricDisplay(QWidget):
         # ---- 左上角静态信息 ----
         painter.setPen(QColor(self.small_font_color_hex))
         y_off = 20
-
         if self.show_song_name and self.song_name:
             bf = QFont("等线", 14, QFont.Bold)
             painter.setFont(bf)
@@ -411,9 +424,8 @@ class NoteLyricDisplay(QWidget):
         # BPM（右上角）
         if self.show_bpm:
             painter.setFont(self.small_font)
-            fm = QFontMetrics(self.small_font)
             bpm_text = f"BPM={self.tempo}"
-            bpm_w = fm.horizontalAdvance(bpm_text)
+            bpm_w = self._fm_small.horizontalAdvance(bpm_text)
             painter.drawText(ww - 20 - bpm_w, 34, bpm_text)
 
         # 播放时间（左下角）
@@ -428,8 +440,7 @@ class NoteLyricDisplay(QWidget):
                 lrc_y = int(wh * 0.3) if self.lyric_pos == "上" else int(wh * 0.7)
                 painter.setPen(QColor(self.small_font_color_hex))
                 painter.setFont(self.lyric_font)
-                fm = QFontMetrics(self.lyric_font)
-                lrc_w = fm.horizontalAdvance(lrc_text)
+                lrc_w = self._fm_lyric.horizontalAdvance(lrc_text)
                 painter.drawText(ww // 2 - lrc_w // 2, lrc_y, lrc_text)
 
         # 版权（底部居中）
@@ -437,12 +448,9 @@ class NoteLyricDisplay(QWidget):
         copy_c.setAlpha(self.copyright_alpha)
         painter.setPen(copy_c)
         painter.setFont(self.copyright_font)
-        copy_text = "ustPlayer-v26b10 © 2026 SYEternalR"
-        fm = QFontMetrics(self.copyright_font)
-        copy_w = fm.horizontalAdvance(copy_text)
+        copy_text = "ustPlayer-v26f19 © 2026 SYEternalR"
+        copy_w = self._fm_copyright.horizontalAdvance(copy_text)
         painter.drawText(ww // 2 - copy_w // 2, wh - 20, copy_text)
-
-        painter.end()
 
     # ===================== 文本生成 =====================
 

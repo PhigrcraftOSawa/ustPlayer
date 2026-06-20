@@ -22,7 +22,8 @@ ustPlayer/
 │   ├── settings_manager.py     # 配置管理器（28个信号驱动属性）
 │   ├── ustreader.py            # UST 解析器（优化版）
 │   ├── ustplayer.py            # 全屏播放器（QPainter 渲染）
-│   └── log.py                  # 日志系统（文件+控制台双输出）
+│   ├── video_exporter.py        # 离线视频导出（imageio + ffmpeg）
+│   └── log.py                   # 日志系统（loguru）
 ├── ui/
 │   ├── basic_page.py           # 基础 — 项目信息、显示选项、Play
 │   ├── file_page.py            # 文件 — UST选择、编码、预览
@@ -75,10 +76,28 @@ ustPlayer/
 - **文本裁切修复**：`boundingRect()` → `horizontalAdvance() + height()` + 20% padding，解决 CJK 字形被截问题
 - **全屏边角修复**：窗口标志在 `show()` 前统一设置 `FramelessWindowHint | WindowStaysOnTopHint`，消除边角漏出
 - **音高线诊断**：播放器启动日志报告 `含PitchBend的音符=N`，音符切换时记录绘制决策
+- **颜色选择器升级**：`QColorDialog` → `ColorPickerButton`（qfluentwidgets 内置 Fluent 取色器），LineEdit ↔ Picker ↔ Settings 三向同步
+- **日志迁移 loguru**：彩色控制台 + 文件自动轮转（1MB/7天），`logger.exception()` 自动附完整堆栈
+
+### 新增：视频导出 (v26f19)
+
+将 UST 可视化渲染为 MP4 视频，离线不限速：
+
+- **基础页**新增 "导出视频" 按钮，选择 UST + 保存路径后即开始渲染
+- `core/video_exporter.py` — 创建离屏 `NoteLyricDisplay`，逐帧渲染 `QImage` → numpy → imageio 编码 H.264
+- `paintEvent` 拆出 `_paint_content(painter, w, h)`，实时播放与离线渲染共用同一绘制逻辑
+
+### UI 改进
+
+- **Switch 开关**：基础页 CheckBox 全部替换为 SwitchButton，新增 "/ 显示选项" "/ 音频" 分区
+- **侧边导航保留文字**：图标 + 中文标签
 
 ### 依赖
 
 ```
 PySide6 >= 6.5.0
 PySide6-Fluent-Widgets[full] >= 1.5.0
+loguru >= 0.7.0
+imageio[ffmpeg] >= 2.35.0
+numpy >= 1.26.0
 ```
