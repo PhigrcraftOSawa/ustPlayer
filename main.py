@@ -111,8 +111,6 @@ class MainWindow(FluentWindow):
                              "按下确认后将启动播放器，鼠标单击后按ESC键退出全屏", self)
             if msg.exec():
                 self._launch_player(ust_info)
-            else:
-                self._launch_player(ust_info)
 
         except UnicodeDecodeError:
             logger.exception("UST 编码错误")

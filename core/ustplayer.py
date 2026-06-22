@@ -30,8 +30,8 @@ def validate_hex_color(hex_color: str) -> str:
 def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
     """#RRGGBB → (R, G, B)。"""
     try:
-        hex_color = hex_color.lstrip('#')
-        return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+        h = hex_color.lstrip('#')
+        return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
     except Exception:
         return (255, 255, 255)
 
@@ -157,6 +157,12 @@ class NoteLyricDisplay(QWidget):
         # ---- 定时器（16ms ≈ 60fps，画面流畅 + 低 CPU） ----
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._tick)
+
+        # 播放结束后的自动关闭定时器（单次触发，允许 closeEvent 提前停止）
+        self._close_timer = QTimer(self)
+        self._close_timer.setSingleShot(True)
+        self._close_timer.timeout.connect(self.close)
+
         logger.debug("播放器 __init__ 完成")
 
     def _init_fonts(self):
@@ -256,7 +262,7 @@ class NoteLyricDisplay(QWidget):
                 self.update()
                 self._timer.stop()
                 logger.info("播放完成，1秒后关闭窗口")
-                QTimer.singleShot(1000, self.close)
+                self._close_timer.start(1000)
                 return
 
             # 匹配当前音符（从上次位置开始查，加速扫描）
@@ -511,6 +517,7 @@ class NoteLyricDisplay(QWidget):
 
     def closeEvent(self, event):
         self._timer.stop()
+        self._close_timer.stop()
         super().closeEvent(event)
 
 
