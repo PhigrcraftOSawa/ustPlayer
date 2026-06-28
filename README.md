@@ -11,18 +11,15 @@
 ![Star](https://img.shields.io/github/stars/SYEternalR/ustPlayer?style=for-the-badge)
 
 
-[发布视频ヾ(≧▽≦*)o](https://www.bilibili.com/video/BV1YjcwzVEcX) | <a href="UPDATELOG.md">更新日志</a>
+[配布视频](https://www.bilibili.com/video/BV1YjcwzVEcX "bilibili弹幕网") | <a href="UPDATELOG.md">更新日志</a>
 
 </div>
-
-## 📄下载说明
-软件仅支持Windows10 64位及以上版本，请确保您的系统符合要求。
 
 > [!WARNING]
 > 
 > 我们将不再提供 .msi 安装包，也不再打算提供 .app 格式程序。
 
-## 🥰致谢
+## 致谢
 ### 资源
 [PySide6](https://www.qt.io/)
 
@@ -36,7 +33,7 @@
   <img src="https://contrib.rocks/image?repo=SYEternalR/ustPlayer" />
 </a>
 
-## ⚠️补充说明
+## 补充说明
 **使用前请务必阅读并同意相关使用协议。**
 
 本工具在开发过程中使用了 AI 工具进行辅助开发。
@@ -47,6 +44,5 @@
 ustPlayer版权由SYEternalR所有，授权给符合条件的任何用户免费使用。
 
 ---
-<div align="center">
-🎉感谢使用，玩得开心！
+感谢使用，玩得开心！
 </div>
