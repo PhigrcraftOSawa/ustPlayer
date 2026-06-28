@@ -54,6 +54,10 @@ class SettingsManager(QObject):
     fullscreen_changed = Signal(bool)
     show_lyric_changed = Signal(bool)
     curve_show_changed = Signal(bool)
+    theme_mode_changed = Signal(str)
+    accent_color_mode_changed = Signal(str)
+    custom_accent_color_changed = Signal(str)
+
     def __init__(self, parent: Optional[QObject] = None):
         super().__init__(parent)
 
@@ -109,6 +113,13 @@ class SettingsManager(QObject):
         self._fullscreen = True
         self._show_lyric = False
         self._curve_show = False
+
+        # 主题模式（用户级 UI 偏好，不参与 uplr 导入导出）
+        self._theme_mode = "auto"  # auto=跟随系统, light=亮色, dark=暗色
+
+        # 强调色设置（用户级 UI 偏好）
+        self._accent_color_mode = "auto"  # auto=跟随系统强调色, custom=自定义
+        self._custom_accent_color = "#009faa"  # qfluentwidgets 默认主题色
 
         # 初始化配置
         self._config = configparser.ConfigParser()
@@ -428,6 +439,44 @@ class SettingsManager(QObject):
             self._curve_show = v
             self.curve_show_changed.emit(v)
 
+    # ===================== 主题模式属性 =====================
+
+    @property
+    def theme_mode(self) -> str:
+        return self._theme_mode
+
+    @theme_mode.setter
+    def theme_mode(self, v: str):
+        if v not in ("auto", "light", "dark"):
+            v = "auto"
+        if self._theme_mode != v:
+            self._theme_mode = v
+            self.theme_mode_changed.emit(v)
+
+    # ===================== 强调色属性 =====================
+
+    @property
+    def accent_color_mode(self) -> str:
+        return self._accent_color_mode
+
+    @accent_color_mode.setter
+    def accent_color_mode(self, v: str):
+        if v not in ("auto", "custom"):
+            v = "auto"
+        if self._accent_color_mode != v:
+            self._accent_color_mode = v
+            self.accent_color_mode_changed.emit(v)
+
+    @property
+    def custom_accent_color(self) -> str:
+        return self._custom_accent_color
+
+    @custom_accent_color.setter
+    def custom_accent_color(self, v: str):
+        if self._custom_accent_color != v:
+            self._custom_accent_color = v
+            self.custom_accent_color_changed.emit(v)
+
     # ===================== Settings.ini 读写 =====================
 
     def read_settings(self):
@@ -447,6 +496,15 @@ class SettingsManager(QObject):
                         self.last_open_dir = default_desktop
                     if not os.path.isdir(self.last_export_dir):
                         self.last_export_dir = default_desktop
+                # 读取主题设置
+                if "ThemeSettings" in self._config:
+                    mode = self._config["ThemeSettings"].get("theme_mode", "auto")
+                    self._theme_mode = mode if mode in ("auto", "light", "dark") else "auto"
+                    amode = self._config["ThemeSettings"].get("accent_color_mode", "auto")
+                    self._accent_color_mode = amode if amode in ("auto", "custom") else "auto"
+                    self._custom_accent_color = self._config["ThemeSettings"].get(
+                        "custom_accent_color", "#009faa"
+                    )
             else:
                 self.last_open_dir = default_desktop
                 self.last_export_dir = default_desktop
@@ -456,12 +514,19 @@ class SettingsManager(QObject):
             print(f"读取配置文件失败：{e}")
 
     def write_settings(self):
-        """将当前导入/导出路径写入配置文件。"""
+        """将当前路径和主题偏好写入配置文件。"""
         try:
             if "PathSettings" not in self._config:
                 self._config["PathSettings"] = {}
             self._config["PathSettings"]["last_open_dir"] = self.last_open_dir
             self._config["PathSettings"]["last_export_dir"] = self.last_export_dir
+
+            if "ThemeSettings" not in self._config:
+                self._config["ThemeSettings"] = {}
+            self._config["ThemeSettings"]["theme_mode"] = self._theme_mode
+            self._config["ThemeSettings"]["accent_color_mode"] = self._accent_color_mode
+            self._config["ThemeSettings"]["custom_accent_color"] = self._custom_accent_color
+
             with open(self.settings_path, "w", encoding="utf-8") as f:
                 self._config.write(f)
         except Exception as e:
