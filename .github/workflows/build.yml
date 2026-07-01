@@ -1,4 +1,4 @@
-name: Build ustPlayer with Nuitka
+name: 自动编译ustPlayer的可执行文件
 
 on:
   push:
@@ -14,11 +14,11 @@ jobs:
 
     steps:
     # 1. 检出代码
-    - name: Checkout code
+    - name: 检出代码
       uses: actions/checkout@v4
 
     # 2. 设置 Python 3.12.9（精确版本）
-    - name: Set up Python
+    - name: 设置 Python 3.12.9
       uses: actions/setup-python@v5
       with:
         python-version: '3.12.9'
@@ -27,13 +27,13 @@ jobs:
         cache-dependency-path: 'requirements.txt'
 
     # 3. 安装所有依赖（包括 PySide6 等）
-    - name: Install dependencies
+    - name: 安装依赖
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     # 4. 使用 Nuitka 进行 standalone 打包
-    - name: Build with Nuitka
+    - name: 使用Nuitka打包
       uses: Nuitka/Nuitka-Action@main
       with:
         # ********** 重要：将此处改为您的入口脚本文件名 **********
@@ -46,7 +46,7 @@ jobs:
         mode: standalone
 
         # 输出可执行文件名（不含扩展名，Windows 自动加 .exe）
-        output-filename: ustPlayer
+        output-file: ustPlayer
 
         # 包含根目录下的三个数据文件（复制到可执行文件同级）
         include-data-files: |
@@ -61,13 +61,13 @@ jobs:
         enable-plugins: pyside6
 
         # （可选）隐藏控制台窗口，如果您的应用是 GUI 程序
-        # windows-console-mode: disable
+        windows-console-mode: disable
 
         # （可选）包含更多参数，例如禁用控制台或启用详细日志
         # extra-args: '--verbose'
 
     # 5. 上传构建产物（整个 build/ 文件夹）
-    - name: Upload artifacts
+    - name: 上传构建产物
       uses: actions/upload-artifact@v4
       with:
         name: ustPlayer-windows
