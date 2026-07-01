@@ -1,0 +1,75 @@
+name: Build ustPlayer with Nuitka
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  # 也可手动触发
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest   # 仅构建 Windows 可执行文件
+
+    steps:
+    # 1. 检出代码
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. 设置 Python 3.12.9（精确版本）
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12.9'
+        architecture: 'x64'
+        cache: 'pip'
+        cache-dependency-path: 'requirements.txt'
+
+    # 3. 安装所有依赖（包括 PySide6 等）
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 4. 使用 Nuitka 进行 standalone 打包
+    - name: Build with Nuitka
+      uses: Nuitka/Nuitka-Action@main
+      with:
+        # ********** 重要：将此处改为您的入口脚本文件名 **********
+        script-name: main.py
+
+        # 使用最新开发版（稳定版可省略该行，或指定具体版本如 '1.8'）
+        nuitka-version: main
+
+        # 打包模式：standalone（生成文件夹）
+        mode: standalone
+
+        # 输出可执行文件名（不含扩展名，Windows 自动加 .exe）
+        output-filename: ustPlayer
+
+        # 包含根目录下的三个数据文件（复制到可执行文件同级）
+        include-data-files: |
+          ERcode.txt=ERcode.txt
+          Terms.txt=Terms.txt
+          icon.ico=icon.ico
+
+        # 设置 Windows 应用程序图标
+        windows-icon-from-ico: icon.ico
+
+        # 启用 PySide6 插件（确保 Qt 资源正确打包）
+        enable-plugins: pyside6
+
+        # （可选）隐藏控制台窗口，如果您的应用是 GUI 程序
+        # windows-console-mode: disable
+
+        # （可选）包含更多参数，例如禁用控制台或启用详细日志
+        # extra-args: '--verbose'
+
+    # 5. 上传构建产物（整个 build/ 文件夹）
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ustPlayer-windows
+        path: build/
+        include-hidden-files: true
